@@ -2,6 +2,8 @@ import os
 from sqlalchemy import Column, String, Integer
 from flask_sqlalchemy import SQLAlchemy
 import json
+from sqlalchemy.ext.mutable import Mutable
+from sqlalchemy.types import TypeDecorator, TEXT
 
 database_filename = "database.db"
 project_dir = os.path.dirname(os.path.abspath(__file__))
@@ -38,8 +40,6 @@ def db_drop_and_create_all():
         title='water',
         recipe='[{"name": "water", "color": "blue", "parts": 1}]'
     )
-
-
     drink.insert()
 # ROUTES
 
@@ -48,6 +48,17 @@ Drink
 a persistent drink entity, extends the base SQLAlchemy Model
 '''
 
+class JSONEncodedDict(TypeDecorator):
+    """Enables JSON storage by encoding and decoding on the fly."""
+    impl = TEXT
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return '{}'
+        return json.dumps(value)
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return {}
+        return json.loads(value)
 
 class Drink(db.Model):
     # Autoincrementing, unique primary key
@@ -56,7 +67,11 @@ class Drink(db.Model):
     title = Column(String(80), unique=True)
     # the ingredients blob - this stores a lazy json blob
     # the required datatype is [{'color': string, 'name':string, 'parts':number}]
-    recipe = Column(String(180), nullable=False)
+    recipe = Column(JSONEncodedDict, nullable=False)
+
+    def __init__(self, title, recipe):
+        self.title = title
+        self.recipe = recipe
 
     '''
     short()
