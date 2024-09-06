@@ -6,7 +6,7 @@ from flask_cors import CORS
 
 from .database.models import db_drop_and_create_all, setup_db, Drink
 from .auth.auth import AuthError, requires_auth
-from auth import AuthError
+# from auth import AuthError
 
 app = Flask(__name__)
 setup_db(app)
@@ -30,6 +30,7 @@ db_drop_and_create_all()
         or appropriate status code indicating reason for failure
 '''
 
+@requires_auth('get:drinks')
 @app.route("/drinks")
 def get_drinks():
         drinks = Drink.query.all()
@@ -51,6 +52,7 @@ def get_drinks():
 '''
 
 @app.route("/drinks-detail")
+@requires_auth('get:drinks-detail')
 def get_drinks_detail():
         drinks = Drink.query.all()
         print(drinks)
@@ -73,6 +75,7 @@ def get_drinks_detail():
 '''
 
 @app.route('/drinks', methods=['POST'])
+@requires_auth('post:drinks')
 def add_drinks():
         data = request.get_json(force=True)
         drink = Drink(
@@ -100,6 +103,7 @@ def add_drinks():
 '''
 
 @app.route('/drinks/<id>', methods=['PATCH'])
+@requires_auth('patch:drinks')
 def patch_drink(id):
    # Retrieve data from the request
    data = request.get_json(force=True)
@@ -129,6 +133,7 @@ def patch_drink(id):
 '''
 
 @app.route('/drinks/<id>', methods=['DELETE'])
+@requires_auth('delete:drinks')
 def delete_drink(id):
    drink = Drink.query.get_or_404(id)
    print('found')
@@ -173,12 +178,12 @@ def unprocessable(error):
 '''
 
 @app.errorhandler(404)
-def unprocessable(error):
-    jsonify({
-                    "success": False,
-                    "error": 404,
-                    "message": "resource not found"
-                    }), 404
+def not_found(error): 
+  return jsonify({ 
+    "success": False, 
+    "error": 404, 
+    "message": "resource not found" 
+  }), 404
 
 
 '''
