@@ -30,8 +30,8 @@ db_drop_and_create_all()
         or appropriate status code indicating reason for failure
 '''
 
-@requires_auth('get:drinks')
 @app.route("/drinks")
+@requires_auth('get:drinks')
 def get_drinks():
         drinks = Drink.query.all()
         print(drinks)
